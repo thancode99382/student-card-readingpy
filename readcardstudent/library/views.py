@@ -1,8 +1,9 @@
 from django.shortcuts import render, redirect, get_object_or_404
 from django.contrib import messages
-from django.contrib.auth.decorators import login_required
+from django.contrib.auth import authenticate, login, logout
+from django.contrib.auth.decorators import login_required, user_passes_test
 from django.core.paginator import Paginator
-from django.db.models import Q
+from django.db.models import Q, Sum
 from django.utils import timezone
 from django.http import JsonResponse
 
@@ -10,6 +11,101 @@ from .models import Book, BorrowRecord, Reservation, BookCategory
 from students.models import StudentCard
 from .forms import BookSearchForm, BorrowBookForm, ReturnBookForm, ReservationForm
 
+def is_staff_user(user):
+    """Check if user is staff"""
+    return user.is_staff
+
+def library_admin_login(request):
+    """View for library login - serves both admin and regular users"""
+    # If user is already authenticated, redirect appropriately
+    if request.user.is_authenticated:
+        if request.user.is_staff:
+            return redirect('library_admin_dashboard')
+        else:
+            return redirect('library_home')
+    
+    if request.method == 'POST':
+        username = request.POST.get('username')
+        password = request.POST.get('password')
+        user = authenticate(request, username=username, password=password)
+        
+        if user is not None:
+            login(request, user)
+            messages.success(request, f"Welcome back, {user.username}!")
+            
+            # Redirect staff users to the admin dashboard, regular users to the library home
+            if user.is_staff:
+                return redirect('library_admin_dashboard')
+            else:
+                return redirect('library_home')
+        else:
+            messages.error(request, "Invalid username or password")
+    
+    return render(request, 'library/admin_login.html')
+
+@login_required(login_url='library_admin_login')
+@user_passes_test(is_staff_user, login_url='library_admin_login')
+def library_admin_dashboard(request):
+    """Admin dashboard for library management"""
+    today = timezone.now().date()
+    
+    # Get statistics for the dashboard
+    total_books = Book.objects.count()
+    available_books = Book.objects.filter(available_copies__gt=0).count()
+    total_students = StudentCard.objects.count()
+    
+    # Active students have at least one active borrow
+    active_students = StudentCard.objects.filter(
+        id__in=BorrowRecord.objects.filter(status__in=['borrowed', 'overdue']).values('student')
+    ).distinct().count()
+    
+    # Borrow statistics
+    borrowed_books = BorrowRecord.objects.filter(status__in=['borrowed', 'overdue']).count()
+    borrowed_today = BorrowRecord.objects.filter(
+        borrowed_date__date=today
+    ).count()
+    
+    # Overdue statistics
+    overdue_books = BorrowRecord.objects.filter(status='overdue').count()
+    total_fines = BorrowRecord.objects.filter(status__in=['borrowed', 'overdue']).aggregate(
+        total=Sum('fine_amount')
+    )['total'] or 0
+    
+    # Recent borrows
+    recent_borrows = BorrowRecord.objects.filter(
+        status__in=['borrowed', 'overdue']
+    ).select_related('book', 'student').order_by('-borrowed_date')[:5]
+    
+    # Overdue borrows with days calculation
+    overdue_borrows = BorrowRecord.objects.filter(status='overdue').select_related('book', 'student')
+    
+    for borrow in overdue_borrows:
+        # Calculate days overdue
+        borrow.days_overdue = (timezone.now().date() - borrow.due_date).days
+    
+    context = {
+        'total_books': total_books,
+        'available_books': available_books,
+        'total_students': total_students,
+        'active_students': active_students,
+        'borrowed_books': borrowed_books,
+        'borrowed_today': borrowed_today,
+        'overdue_books': overdue_books,
+        'total_fines': total_fines,
+        'recent_borrows': recent_borrows,
+        'overdue_borrows': overdue_borrows[:10],  # Limit to 10 most overdue books
+    }
+    
+    return render(request, 'library/admin_dashboard.html', context)
+
+@login_required(login_url='library_admin_login')
+def library_admin_logout(request):
+    """Logout view for library admin"""
+    logout(request)
+    messages.info(request, "You have been logged out.")
+    return redirect('library_home')
+
+@login_required(login_url='library_admin_login')
 def library_home(request):
     """Home page view for the library"""
     recent_books = Book.objects.filter(available_copies__gt=0).order_by('-added_on')[:6]
@@ -25,6 +121,7 @@ def library_home(request):
     }
     return render(request, 'library/home.html', context)
 
+@login_required(login_url='library_admin_login')
 def book_list(request):
     """View for displaying all books with search and filter options"""
     form = BookSearchForm(request.GET)
@@ -63,6 +160,7 @@ def book_list(request):
     }
     return render(request, 'library/book_list.html', context)
 
+@login_required(login_url='library_admin_login')
 def book_detail(request, book_id):
     """View for displaying details of a specific book"""
     book = get_object_or_404(Book, id=book_id)
@@ -86,6 +184,7 @@ def book_detail(request, book_id):
     }
     return render(request, 'library/book_detail.html', context)
 
+@login_required(login_url='library_admin_login')
 def student_detail(request, student_id):
     """View for displaying a student's library activities"""
     student = get_object_or_404(StudentCard, id=student_id)
@@ -119,6 +218,7 @@ def student_detail(request, student_id):
     }
     return render(request, 'library/student_detail.html', context)
 
+@login_required(login_url='library_admin_login')
 def scan_student_card(request):
     """View for scanning a student card to access library services"""
     if request.method == 'POST' and request.FILES.get('card_image'):
@@ -128,6 +228,7 @@ def scan_student_card(request):
     
     return render(request, 'library/scan_card.html')
 
+@login_required(login_url='library_admin_login')
 def student_verification(request):
     """View for verifying a student after card scanning"""
     # Get the latest processed student card (assumes this was just created by scan_student_card)
@@ -156,6 +257,7 @@ def student_verification(request):
         messages.error(request, "No student card was found. Please scan your card again.")
         return redirect('library_scan_card')
 
+@login_required(login_url='library_admin_login')
 def borrow_book(request, book_id):
     """View for borrowing a book"""
     book = get_object_or_404(Book, id=book_id)
@@ -196,6 +298,7 @@ def borrow_book(request, book_id):
     }
     return render(request, 'library/borrow_book.html', context)
 
+@login_required(login_url='library_admin_login')
 def return_book(request, borrow_id=None):
     """View for returning a borrowed book"""
     if borrow_id:
@@ -258,6 +361,7 @@ def return_book(request, borrow_id=None):
     
     return render(request, 'library/find_borrowed_book.html')
 
+@login_required(login_url='library_admin_login')
 def reserve_book(request, book_id):
     """View for reserving a book"""
     book = get_object_or_404(Book, id=book_id)
@@ -303,6 +407,7 @@ def reserve_book(request, book_id):
     }
     return render(request, 'library/reserve_book.html', context)
 
+@login_required(login_url='library_admin_login')
 def cancel_reservation(request, reservation_id):
     """View for cancelling a book reservation"""
     reservation = get_object_or_404(Reservation, id=reservation_id)

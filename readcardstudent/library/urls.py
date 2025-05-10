@@ -2,7 +2,13 @@ from django.urls import path
 from . import views
 
 urlpatterns = [
-    path('', views.library_home, name='library_home'),
+    # Login/Authentication URLs
+    path('', views.library_admin_login, name='library_admin_login'),
+    path('home/', views.library_home, name='library_home'),
+    path('admin/dashboard/', views.library_admin_dashboard, name='library_admin_dashboard'),
+    path('logout/', views.library_admin_logout, name='library_admin_logout'),
+    
+    # Book related URLs
     path('books/', views.book_list, name='library_book_list'),
     path('books/<int:book_id>/', views.book_detail, name='library_book_detail'),
     path('students/<int:student_id>/', views.student_detail, name='library_student_detail'),

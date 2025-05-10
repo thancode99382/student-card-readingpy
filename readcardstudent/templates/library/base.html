@@ -69,6 +69,24 @@
                     </li>
                 </ul>
                 <ul class="navbar-nav ms-auto">
+                    {% if request.user.is_authenticated and request.user.is_staff %}
+                    <li class="nav-item">
+                        <a class="nav-link {% if '/library/admin/dashboard/' in request.path %}active{% endif %}" href="{% url 'library_admin_dashboard' %}">
+                            <i class="fas fa-tachometer-alt me-1"></i> Admin Dashboard
+                        </a>
+                    </li>
+                    <li class="nav-item">
+                        <a class="nav-link" href="{% url 'library_admin_logout' %}">
+                            <i class="fas fa-sign-out-alt me-1"></i> Logout
+                        </a>
+                    </li>
+                    {% else %}
+                    <li class="nav-item">
+                        <a class="nav-link {% if '/library/admin/login/' in request.path %}active{% endif %}" href="{% url 'library_admin_login' %}">
+                            <i class="fas fa-user-shield me-1"></i> Admin Login
+                        </a>
+                    </li>
+                    {% endif %}
                     <li class="nav-item">
                         <a class="nav-link" href="{% url 'home' %}">
                             <i class="fas fa-arrow-left me-1"></i> Back to Student Card Reader
