@@ -1,0 +1,103 @@
+{% extends 'library/base.html' %}
+
+{% block title %}Reserve Book - {{ book.title }}{% endblock %}
+
+{% block content %}
+<div class="row">
+    <div class="col-md-12 mb-4">
+        <nav aria-label="breadcrumb">
+            <ol class="breadcrumb">
+                <li class="breadcrumb-item"><a href="{% url 'library_home' %}">Home</a></li>
+                <li class="breadcrumb-item"><a href="{% url 'library_book_list' %}">Books</a></li>
+                <li class="breadcrumb-item"><a href="{% url 'library_book_detail' book.id %}">{{ book.title }}</a></li>
+                <li class="breadcrumb-item active">Reserve</li>
+            </ol>
+        </nav>
+    </div>
+</div>
+
+<div class="row justify-content-center">
+    <div class="col-lg-8">
+        <div class="card">
+            <div class="card-header bg-warning text-dark">
+                <h4 class="mb-0"><i class="fas fa-bookmark me-2"></i> Reserve Book</h4>
+            </div>
+            <div class="card-body">
+                <div class="row mb-4">
+                    <div class="col-md-3">
+                        {% if book.cover_image %}
+                            <img src="{{ book.cover_image.url }}" alt="{{ book.title }}" class="img-fluid rounded">
+                        {% else %}
+                            <div class="bg-secondary rounded d-flex align-items-center justify-content-center" style="height: 150px;">
+                                <i class="fas fa-book fa-3x text-white"></i>
+                            </div>
+                        {% endif %}
+                    </div>
+                    <div class="col-md-9">
+                        <h3>{{ book.title }}</h3>
+                        <p class="text-muted">by {{ book.author }}</p>
+                        <p><strong>ISBN:</strong> {{ book.isbn }}</p>
+                        <div class="alert alert-info">
+                            <i class="fas fa-info-circle me-1"></i> This book is currently unavailable. There are {{ pending_reservations.count }} people waiting.
+                        </div>
+                    </div>
+                </div>
+                
+                <hr>
+                
+                <form method="post">
+                    {% csrf_token %}
+                    <div class="mb-3">
+                        <label for="id_student_id" class="form-label">Student ID</label>
+                        {{ form.student_id }}
+                        <div class="form-text">
+                            Enter the ID of the student who wants to reserve this book. Alternatively, you can <a href="{% url 'library_scan_card' %}">scan a student card</a>.
+                        </div>
+                    </div>
+                    
+                    <div class="mb-4">
+                        <label for="id_notes" class="form-label">Notes</label>
+                        {{ form.notes }}
+                        <div class="form-text">
+                            Add any additional notes about this reservation (optional).
+                        </div>
+                    </div>
+                    
+                    <div class="d-grid gap-2">
+                        <button type="submit" class="btn btn-warning">
+                            <i class="fas fa-check-circle me-1"></i> Confirm Reservation
+                        </button>
+                        <a href="{% url 'library_book_detail' book.id %}" class="btn btn-outline-secondary">
+                            <i class="fas fa-arrow-left me-1"></i> Back to Book Details
+                        </a>
+                    </div>
+                </form>
+            </div>
+        </div>
+        
+        <div class="card mt-4">
+            <div class="card-header bg-info text-white">
+                <h5 class="mb-0"><i class="fas fa-info-circle me-2"></i> Reservation Information</h5>
+            </div>
+            <div class="list-group list-group-flush">
+                <div class="list-group-item">
+                    <i class="fas fa-clock text-primary me-2"></i>
+                    Reservations are valid for <strong>3 days</strong> after a book becomes available.
+                </div>
+                <div class="list-group-item">
+                    <i class="fas fa-bell text-warning me-2"></i>
+                    You will be notified when the book becomes available.
+                </div>
+                <div class="list-group-item">
+                    <i class="fas fa-list-ol text-success me-2"></i>
+                    Reservations are processed in the order they are received.
+                </div>
+                <div class="list-group-item">
+                    <i class="fas fa-times-circle text-danger me-2"></i>
+                    If you don't pick up the book within 3 days, your reservation will expire.
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}

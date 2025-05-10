@@ -1,0 +1,238 @@
+{% extends 'library/base.html' %}
+
+{% block title %}Student Profile - {{ student.name }}{% endblock %}
+
+{% block content %}
+<div class="row">
+    <div class="col-lg-4 mb-4">
+        <!-- Student Info Card -->
+        <div class="card">
+            <div class="card-header bg-primary text-white">
+                <h4 class="mb-0"><i class="fas fa-user-graduate me-2"></i> Student Information</h4>
+            </div>
+            <div class="card-body">
+                <div class="text-center mb-4">
+                    {% if student.image %}
+                    <img src="{{ student.image.url }}" alt="{{ student.name }}" class="img-fluid rounded mb-3" style="max-height: 200px;">
+                    {% else %}
+                    <div class="rounded-circle bg-secondary d-inline-flex align-items-center justify-content-center" style="width: 150px; height: 150px;">
+                        <i class="fas fa-user-graduate fa-4x text-white"></i>
+                    </div>
+                    {% endif %}
+                    <h4>{{ student.name }}</h4>
+                    <p class="text-muted mb-0">Student ID: {{ student.student_id }}</p>
+                </div>
+                
+                <table class="table">
+                    <tbody>
+                        <tr>
+                            <th>University:</th>
+                            <td>{{ student.university|default:"Not available" }}</td>
+                        </tr>
+                        <tr>
+                            <th>Class:</th>
+                            <td>{{ student.class_name|default:"Not available" }}</td>
+                        </tr>
+                        <tr>
+                            <th>Date of Birth:</th>
+                            <td>{{ student.dob|default:"Not available" }}</td>
+                        </tr>
+                        <tr>
+                            <th>Cohort:</th>
+                            <td>{{ student.cohort|default:"Not available" }}</td>
+                        </tr>
+                    </tbody>
+                </table>
+            </div>
+        </div>
+
+        <!-- Library Stats Card -->
+        <div class="card mt-4">
+            <div class="card-header bg-success text-white">
+                <h4 class="mb-0"><i class="fas fa-chart-bar me-2"></i> Library Stats</h4>
+            </div>
+            <div class="card-body">
+                <div class="row text-center">
+                    <div class="col-6 mb-3">
+                        <div class="p-3 bg-light rounded">
+                            <h3 class="text-primary">{{ active_borrows.count }}</h3>
+                            <p class="mb-0">Books Borrowed</p>
+                        </div>
+                    </div>
+                    <div class="col-6 mb-3">
+                        <div class="p-3 bg-light rounded">
+                            <h3 class="text-warning">{{ active_reservations.count }}</h3>
+                            <p class="mb-0">Active Reservations</p>
+                        </div>
+                    </div>
+                    <div class="col-6">
+                        <div class="p-3 bg-light rounded">
+                            <h3 class="text-info">{{ borrow_history.count }}</h3>
+                            <p class="mb-0">Total Transactions</p>
+                        </div>
+                    </div>
+                    <div class="col-6">
+                        <div class="p-3 bg-light rounded">
+                            <h3 class="text-danger">${{ total_fine|floatformat:2 }}</h3>
+                            <p class="mb-0">Outstanding Fines</p>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+    
+    <div class="col-lg-8">
+        <!-- Current Borrowings Tab -->
+        <div class="card mb-4">
+            <div class="card-header bg-info text-white">
+                <h4 class="mb-0"><i class="fas fa-book-reader me-2"></i> Current Borrowings</h4>
+            </div>
+            <div class="card-body">
+                {% if active_borrows %}
+                <div class="table-responsive">
+                    <table class="table table-hover">
+                        <thead>
+                            <tr>
+                                <th>Book</th>
+                                <th>Borrowed Date</th>
+                                <th>Due Date</th>
+                                <th>Status</th>
+                                <th>Action</th>
+                            </tr>
+                        </thead>
+                        <tbody>
+                            {% for borrow in active_borrows %}
+                            <tr>
+                                <td>
+                                    <a href="{% url 'library_book_detail' borrow.book.id %}">{{ borrow.book.title }}</a>
+                                    <small class="text-muted d-block">{{ borrow.book.author }}</small>
+                                </td>
+                                <td>{{ borrow.borrowed_date|date:"M d, Y" }}</td>
+                                <td>
+                                    {{ borrow.due_date|date:"M d, Y" }}
+                                    {% if borrow.is_overdue %}
+                                    <span class="badge bg-danger d-block mt-1">Overdue</span>
+                                    {% endif %}
+                                </td>
+                                <td>
+                                    {% if borrow.status == 'borrowed' %}
+                                        <span class="badge bg-primary">Borrowed</span>
+                                    {% elif borrow.status == 'overdue' %}
+                                        <span class="badge bg-danger">Overdue</span>
+                                        <small class="d-block text-danger">${{ borrow.fine_amount }}</small>
+                                    {% endif %}
+                                </td>
+                                <td>
+                                    <a href="{% url 'library_return_specific_book' borrow.id %}" class="btn btn-sm btn-primary">
+                                        <i class="fas fa-undo me-1"></i> Return
+                                    </a>
+                                </td>
+                            </tr>
+                            {% endfor %}
+                        </tbody>
+                    </table>
+                </div>
+                {% else %}
+                <div class="alert alert-info">
+                    <i class="fas fa-info-circle me-2"></i> No active borrowings found.
+                </div>
+                {% endif %}
+            </div>
+        </div>
+
+        <!-- Active Reservations -->
+        <div class="card mb-4">
+            <div class="card-header bg-warning text-dark">
+                <h4 class="mb-0"><i class="fas fa-bookmark me-2"></i> Active Reservations</h4>
+            </div>
+            <div class="card-body">
+                {% if active_reservations %}
+                <div class="table-responsive">
+                    <table class="table table-hover">
+                        <thead>
+                            <tr>
+                                <th>Book</th>
+                                <th>Reserved Date</th>
+                                <th>Expiry Date</th>
+                                <th>Action</th>
+                            </tr>
+                        </thead>
+                        <tbody>
+                            {% for reservation in active_reservations %}
+                            <tr>
+                                <td>
+                                    <a href="{% url 'library_book_detail' reservation.book.id %}">{{ reservation.book.title }}</a>
+                                    <small class="text-muted d-block">{{ reservation.book.author }}</small>
+                                </td>
+                                <td>{{ reservation.reservation_date|date:"M d, Y" }}</td>
+                                <td>{{ reservation.expiry_date|date:"M d, Y" }}</td>
+                                <td>
+                                    <a href="{% url 'library_cancel_reservation' reservation.id %}" class="btn btn-sm btn-danger">
+                                        <i class="fas fa-times me-1"></i> Cancel
+                                    </a>
+                                </td>
+                            </tr>
+                            {% endfor %}
+                        </tbody>
+                    </table>
+                </div>
+                {% else %}
+                <div class="alert alert-info">
+                    <i class="fas fa-info-circle me-2"></i> No active reservations found.
+                </div>
+                {% endif %}
+            </div>
+        </div>
+        
+        <!-- Borrowing History -->
+        <div class="card">
+            <div class="card-header bg-secondary text-white d-flex justify-content-between align-items-center">
+                <h4 class="mb-0"><i class="fas fa-history me-2"></i> Borrowing History</h4>
+                <button class="btn btn-light btn-sm" type="button" data-bs-toggle="collapse" data-bs-target="#historyCollapse">
+                    <i class="fas fa-chevron-down"></i>
+                </button>
+            </div>
+            <div class="collapse" id="historyCollapse">
+                <div class="card-body">
+                    {% if borrow_history %}
+                    <div class="table-responsive">
+                        <table class="table table-hover">
+                            <thead>
+                                <tr>
+                                    <th>Book</th>
+                                    <th>Borrowed Date</th>
+                                    <th>Return Date</th>
+                                    <th>Status</th>
+                                </tr>
+                            </thead>
+                            <tbody>
+                                {% for borrow in borrow_history %}
+                                {% if borrow.status == 'returned' %}
+                                <tr>
+                                    <td>
+                                        <a href="{% url 'library_book_detail' borrow.book.id %}">{{ borrow.book.title }}</a>
+                                        <small class="text-muted d-block">{{ borrow.book.author }}</small>
+                                    </td>
+                                    <td>{{ borrow.borrowed_date|date:"M d, Y" }}</td>
+                                    <td>{{ borrow.return_date|date:"M d, Y"|default:"Not returned" }}</td>
+                                    <td>
+                                        <span class="badge bg-success">Returned</span>
+                                    </td>
+                                </tr>
+                                {% endif %}
+                                {% endfor %}
+                            </tbody>
+                        </table>
+                    </div>
+                    {% else %}
+                    <div class="alert alert-info">
+                        <i class="fas fa-info-circle me-2"></i> No borrowing history found.
+                    </div>
+                    {% endif %}
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}

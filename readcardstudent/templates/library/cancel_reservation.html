@@ -1,0 +1,60 @@
+cd /home/vandat/programming/django/studentcr/readcardstudent
+python manage.py runserver{% extends 'library/base.html' %}
+
+{% block title %}Cancel Reservation{% endblock %}
+
+{% block content %}
+<div class="row justify-content-center">
+    <div class="col-lg-6">
+        <div class="card">
+            <div class="card-header bg-danger text-white">
+                <h4 class="mb-0"><i class="fas fa-times-circle me-2"></i> Cancel Reservation</h4>
+            </div>
+            <div class="card-body">
+                <div class="alert alert-warning mb-4">
+                    <h5><i class="fas fa-exclamation-triangle me-2"></i> Confirm Cancellation</h5>
+                    <p class="mb-0">
+                        Are you sure you want to cancel the reservation for <strong>"{{ reservation.book.title }}"</strong> by {{ reservation.student.name }}?
+                    </p>
+                </div>
+                
+                <div class="row mb-4">
+                    <div class="col-md-12">
+                        <h5>Reservation Details:</h5>
+                        <table class="table table-bordered">
+                            <tr>
+                                <th>Book:</th>
+                                <td>{{ reservation.book.title }}</td>
+                            </tr>
+                            <tr>
+                                <th>Student:</th>
+                                <td>{{ reservation.student.name }} ({{ reservation.student.student_id }})</td>
+                            </tr>
+                            <tr>
+                                <th>Reserved On:</th>
+                                <td>{{ reservation.reservation_date|date:"F d, Y" }}</td>
+                            </tr>
+                            <tr>
+                                <th>Expiry Date:</th>
+                                <td>{{ reservation.expiry_date|date:"F d, Y" }}</td>
+                            </tr>
+                        </table>
+                    </div>
+                </div>
+                
+                <form method="post">
+                    {% csrf_token %}
+                    <div class="d-grid gap-2">
+                        <button type="submit" class="btn btn-danger">
+                            <i class="fas fa-check-circle me-1"></i> Yes, Cancel Reservation
+                        </button>
+                        <a href="{% url 'library_student_detail' reservation.student.id %}" class="btn btn-outline-secondary">
+                            <i class="fas fa-arrow-left me-1"></i> No, Go Back
+                        </a>
+                    </div>
+                </form>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}

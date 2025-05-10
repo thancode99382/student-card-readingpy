@@ -1,0 +1,76 @@
+{% extends 'library/base.html' %}
+
+{% block title %}Return a Book{% endblock %}
+
+{% block content %}
+<div class="row justify-content-center">
+    <div class="col-lg-8">
+        <div class="card">
+            <div class="card-header bg-primary text-white">
+                <h4 class="mb-0"><i class="fas fa-search me-2"></i> Find Borrowed Book</h4>
+            </div>
+            <div class="card-body">
+                <p class="lead">Enter the book and student details to return a borrowed book:</p>
+                
+                <form method="post">
+                    {% csrf_token %}
+                    <div class="mb-3">
+                        <label for="book_id" class="form-label">Book ISBN</label>
+                        <input type="text" name="book_id" id="book_id" class="form-control" placeholder="Enter book ISBN" required>
+                        <div class="form-text">
+                            Enter the ISBN of the book being returned.
+                        </div>
+                    </div>
+                    
+                    <div class="mb-4">
+                        <label for="student_id" class="form-label">Student ID</label>
+                        <input type="text" name="student_id" id="student_id" class="form-control" placeholder="Enter student ID" required>
+                        <div class="form-text">
+                            Enter the ID of the student returning the book.
+                        </div>
+                    </div>
+                    
+                    <div class="d-grid">
+                        <button type="submit" class="btn btn-primary">
+                            <i class="fas fa-search me-1"></i> Find Borrowed Book
+                        </button>
+                    </div>
+                </form>
+                
+                <hr>
+                
+                <div class="text-center">
+                    <p>Alternatively, you can:</p>
+                    <a href="{% url 'library_scan_card' %}" class="btn btn-outline-primary">
+                        <i class="fas fa-id-card me-1"></i> Scan Student Card
+                    </a>
+                </div>
+            </div>
+        </div>
+        
+        <div class="card mt-4">
+            <div class="card-header bg-info text-white">
+                <h5 class="mb-0"><i class="fas fa-info-circle me-2"></i> Help Information</h5>
+            </div>
+            <div class="list-group list-group-flush">
+                <div class="list-group-item">
+                    <i class="fas fa-search text-primary me-2"></i>
+                    You can find the ISBN on the back of the book.
+                </div>
+                <div class="list-group-item">
+                    <i class="fas fa-id-card text-success me-2"></i>
+                    The student ID can be found on the student's card.
+                </div>
+                <div class="list-group-item">
+                    <i class="fas fa-barcode text-info me-2"></i>
+                    You can also scan the barcode if you have a barcode scanner.
+                </div>
+                <div class="list-group-item">
+                    <i class="fas fa-user text-warning me-2"></i>
+                    If you have the student's ID, you can also check their <a href="{% url 'library_scan_card' %}">borrowing record</a> directly.
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}

@@ -1,0 +1,96 @@
+{% extends 'library/base.html' %}
+
+{% block title %}Scan Student Card - Library{% endblock %}
+
+{% block content %}
+<div class="row justify-content-center">
+    <div class="col-md-8">
+        <div class="card">
+            <div class="card-header bg-primary text-white">
+                <h4 class="mb-0"><i class="fas fa-id-card me-2"></i> Scan Your Student Card</h4>
+            </div>
+            <div class="card-body">
+                <p class="lead">Please upload a clear image of your student card to access library services:</p>
+                
+                <form method="post" enctype="multipart/form-data" id="uploadForm">
+                    {% csrf_token %}
+                    <div class="mb-4">
+                        <label for="card_image" class="form-label">Student Card Image</label>
+                        <input type="file" name="card_image" id="card_image" class="form-control" accept="image/*" required>
+                        <div class="form-text text-muted">
+                            Upload a clear image of your student ID card. Supported formats: JPG, PNG.
+                        </div>
+                    </div>
+                    
+                    <div id="imagePreview" class="mt-3 mb-4 d-none">
+                        <h5>Image Preview:</h5>
+                        <img src="" alt="Image Preview" class="img-fluid img-thumbnail">
+                    </div>
+                    
+                    <div class="d-grid gap-2">
+                        <button type="submit" class="btn btn-primary" id="submitBtn">
+                            <i class="fas fa-cloud-upload-alt me-2"></i> Upload and Verify
+                        </button>
+                        <a href="{% url 'library_home' %}" class="btn btn-secondary">
+                            <i class="fas fa-arrow-left me-2"></i> Back to Library Home
+                        </a>
+                    </div>
+                </form>
+            </div>
+        </div>
+        
+        <div class="card mt-4">
+            <div class="card-header bg-info text-white">
+                <h5 class="mb-0"><i class="fas fa-info-circle me-2"></i> Library Card Verification</h5>
+            </div>
+            <div class="card-body">
+                <p>After verification, you'll be able to:</p>
+                <ul class="list-group list-group-flush">
+                    <li class="list-group-item">
+                        <i class="fas fa-book text-success me-2"></i> Borrow books from the library
+                    </li>
+                    <li class="list-group-item">
+                        <i class="fas fa-history text-primary me-2"></i> Check your borrowing history
+                    </li>
+                    <li class="list-group-item">
+                        <i class="fas fa-clock text-warning me-2"></i> View and manage your reservations
+                    </li>
+                    <li class="list-group-item">
+                        <i class="fas fa-sync-alt text-info me-2"></i> Return borrowed books
+                    </li>
+                    <li class="list-group-item">
+                        <i class="fas fa-dollar-sign text-danger me-2"></i> Pay any overdue fines
+                    </li>
+                </ul>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}
+
+{% block extra_js %}
+<script>
+    // Image preview functionality
+    document.getElementById('card_image').addEventListener('change', function(e) {
+        const file = e.target.files[0];
+        if (file) {
+            const reader = new FileReader();
+            const preview = document.getElementById('imagePreview');
+            const previewImg = preview.querySelector('img');
+            
+            reader.onload = function(e) {
+                previewImg.src = e.target.result;
+                preview.classList.remove('d-none');
+            }
+            
+            reader.readAsDataURL(file);
+        }
+    });
+    
+    // Disable submit button after click to prevent double submission
+    document.getElementById('uploadForm').addEventListener('submit', function() {
+        document.getElementById('submitBtn').disabled = true;
+        document.getElementById('submitBtn').innerHTML = '<span class="spinner-border spinner-border-sm me-2" role="status" aria-hidden="true"></span> Processing...';
+    });
+</script>
+{% endblock %}

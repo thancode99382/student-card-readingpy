@@ -13,8 +13,13 @@ def home(request):
     """Home page view"""
     return render(request, 'students/home.html')
 
-def upload_card(request):
-    """View for handling card uploads"""
+def upload_card(request, redirect_to=None):
+    """View for handling card uploads
+    
+    Args:
+        request: HttpRequest object
+        redirect_to: Optional name of URL to redirect to after processing
+    """
     if request.method == 'POST' and request.FILES.get('card_image'):
         # Get the uploaded image
         image_file = request.FILES['card_image']
@@ -45,7 +50,11 @@ def upload_card(request):
             base_filename = f"card_{student_card.id}_{uuid.uuid4().hex[:8]}"
             vis_paths = processor.save_visualization(original, processed, visualization, base_filename)
             
-            # Prepare context for template
+            # Handle custom redirect if provided
+            if redirect_to:
+                return redirect(redirect_to)
+            
+            # Default behavior - render result template
             context = {
                 'student_card': student_card,
                 'visualizations': vis_paths,

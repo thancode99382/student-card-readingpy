@@ -1,0 +1,119 @@
+{% extends 'library/base.html' %}
+
+{% block title %}Smart Library - Home{% endblock %}
+
+{% block content %}
+<div class="row">
+    <div class="col-md-12">
+        <div class="jumbotron bg-light p-5 rounded">
+            <h1 class="display-4">Welcome to Smart Library</h1>
+            <p class="lead">
+                An advanced library management system powered by student card recognition technology.
+            </p>
+            <hr class="my-4">
+            <p>Scan your student card to borrow books, check your borrowing history, or manage reservations.</p>
+            <div class="mt-4">
+                <a class="btn btn-primary btn-lg me-2" href="{% url 'library_scan_card' %}">
+                    <i class="fas fa-id-card me-1"></i> Scan Student Card
+                </a>
+                <a class="btn btn-secondary btn-lg" href="{% url 'library_book_list' %}">
+                    <i class="fas fa-search me-1"></i> Browse Books
+                </a>
+            </div>
+        </div>
+    </div>
+</div>
+
+<div class="row mt-5">
+    <div class="col-md-4 mb-4">
+        <div class="card h-100 text-center">
+            <div class="card-body">
+                <i class="fas fa-book fa-3x text-primary mb-3"></i>
+                <h3>{{ total_books }}</h3>
+                <h5>Total Books</h5>
+            </div>
+        </div>
+    </div>
+    <div class="col-md-4 mb-4">
+        <div class="card h-100 text-center">
+            <div class="card-body">
+                <i class="fas fa-check-circle fa-3x text-success mb-3"></i>
+                <h3>{{ available_books }}</h3>
+                <h5>Available Books</h5>
+            </div>
+        </div>
+    </div>
+    <div class="col-md-4 mb-4">
+        <div class="card h-100 text-center">
+            <div class="card-body">
+                <i class="fas fa-layer-group fa-3x text-info mb-3"></i>
+                <h3>{{ categories|length }}</h3>
+                <h5>Book Categories</h5>
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- Recently Added Books Section -->
+<div class="mt-5">
+    <h2 class="mb-4"><i class="fas fa-clock me-2"></i> Recently Added Books</h2>
+    <div class="row row-cols-1 row-cols-md-2 row-cols-lg-3 g-4">
+        {% for book in recent_books %}
+        <div class="col">
+            <div class="card book-card">
+                {% if book.cover_image %}
+                    <img src="{{ book.cover_image.url }}" class="card-img-top book-cover" alt="{{ book.title }}">
+                {% else %}
+                    <div class="card-img-top book-cover bg-secondary d-flex align-items-center justify-content-center">
+                        <i class="fas fa-book fa-3x text-white"></i>
+                    </div>
+                {% endif %}
+                <div class="card-body">
+                    <h5 class="card-title">{{ book.title }}</h5>
+                    <p class="card-text text-muted">{{ book.author }}</p>
+                    {% if book.available_copies > 0 %}
+                        <span class="badge bg-success">Available</span>
+                    {% else %}
+                        <span class="badge bg-danger">Unavailable</span>
+                    {% endif %}
+                </div>
+                <div class="card-footer bg-transparent border-0">
+                    <a href="{% url 'library_book_detail' book.id %}" class="btn btn-sm btn-primary">View Details</a>
+                </div>
+            </div>
+        </div>
+        {% empty %}
+        <div class="col-12">
+            <div class="alert alert-info">
+                No books have been added to the library yet.
+            </div>
+        </div>
+        {% endfor %}
+    </div>
+</div>
+
+<!-- Browse Categories Section -->
+<div class="mt-5">
+    <h2 class="mb-4"><i class="fas fa-th-large me-2"></i> Browse by Categories</h2>
+    <div class="row g-4">
+        {% for category in categories %}
+        <div class="col-md-3 col-6">
+            <div class="card text-center">
+                <div class="card-body">
+                    <h5 class="card-title">{{ category.name }}</h5>
+                    <a href="{% url 'library_book_list' %}?category={{ category.id }}" class="btn btn-outline-primary btn-sm mt-2">
+                        Browse Books
+                    </a>
+                </div>
+            </div>
+        </div>
+        {% empty %}
+        <div class="col-12">
+            <div class="alert alert-info">
+                No categories have been created yet.
+            </div>
+        </div>
+        {% endfor %}
+    </div>
+</div>
+{% endblock %}
