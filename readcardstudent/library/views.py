@@ -268,7 +268,16 @@ def borrow_book(request, book_id):
             student_id = form.cleaned_data['student_id']
             
             try:
-                student = StudentCard.objects.get(student_id=student_id)
+                # Use filter instead of get to handle multiple StudentCard instances 
+                # with the same student_id
+                student_cards = StudentCard.objects.filter(student_id=student_id)
+                
+                if not student_cards.exists():
+                    messages.error(request, "Student ID not found. Please check the ID and try again.")
+                    return render(request, 'library/borrow_book.html', {'form': form, 'book': book})
+                
+                # Use the most recent student card instance for this student ID
+                student = student_cards.latest('uploaded_at')
                 
                 # Check if book is available
                 if book.available_copies <= 0:
@@ -276,7 +285,11 @@ def borrow_book(request, book_id):
                     return redirect('library_book_detail', book_id=book.id)
                 
                 # Check if student already has this book
-                if BorrowRecord.objects.filter(student=student, book=book, status__in=['borrowed', 'overdue']).exists():
+                if BorrowRecord.objects.filter(
+                    student__student_id=student_id, 
+                    book=book, 
+                    status__in=['borrowed', 'overdue']
+                ).exists():
                     messages.error(request, "This student already has this book.")
                     return redirect('library_book_detail', book_id=book.id)
                 
@@ -284,11 +297,15 @@ def borrow_book(request, book_id):
                 borrow = BorrowRecord(student=student, book=book, status='borrowed')
                 borrow.save()
                 
+                # Update book available copies
+                book.available_copies -= 1
+                book.save()
+                
                 messages.success(request, f"Book '{book.title}' has been borrowed successfully by {student.name}.")
                 return redirect('library_student_detail', student_id=student.id)
                 
-            except StudentCard.DoesNotExist:
-                messages.error(request, "Student ID not found. Please check the ID and try again.")
+            except Exception as e:
+                messages.error(request, f"An error occurred: {str(e)}")
     else:
         form = BorrowBookForm()
     
@@ -312,6 +329,11 @@ def return_book(request, borrow_id=None):
                 borrow_record.status = 'returned'
                 borrow_record.return_date = timezone.now()
                 borrow_record.save()
+                
+                # Increment available copies when book is returned
+                book = borrow_record.book
+                book.available_copies += 1
+                book.save()
                 
                 # Check if there are any pending reservations for this book
                 pending_reservations = Reservation.objects.filter(
@@ -344,7 +366,16 @@ def return_book(request, borrow_id=None):
         
         try:
             book = Book.objects.get(isbn=book_id)
-            student = StudentCard.objects.get(student_id=student_id)
+            
+            # Use filter instead of get to handle multiple StudentCard instances
+            student_cards = StudentCard.objects.filter(student_id=student_id)
+            
+            if not student_cards.exists():
+                messages.error(request, "Student ID not found. Please check the ID and try again.")
+                return render(request, 'library/find_borrowed_book.html')
+            
+            # Use the most recent student card
+            student = student_cards.latest('uploaded_at')
             
             borrow_record = BorrowRecord.objects.filter(
                 book=book,
@@ -353,11 +384,13 @@ def return_book(request, borrow_id=None):
             ).first()
             
             if borrow_record:
-                return redirect('library_return_book', borrow_id=borrow_record.id)
+                return redirect('library_return_specific_book', borrow_id=borrow_record.id)
             else:
                 messages.error(request, "No active borrowing record found for this book and student.")
-        except (Book.DoesNotExist, StudentCard.DoesNotExist):
-            messages.error(request, "Book or student not found. Please check the details and try again.")
+        except Book.DoesNotExist:
+            messages.error(request, "Book not found. Please check the ISBN and try again.")
+        except Exception as e:
+            messages.error(request, f"An error occurred: {str(e)}")
     
     return render(request, 'library/find_borrowed_book.html')
 
@@ -377,10 +410,22 @@ def reserve_book(request, book_id):
             student_id = form.cleaned_data['student_id']
             
             try:
-                student = StudentCard.objects.get(student_id=student_id)
+                # Use filter instead of get to handle multiple StudentCard instances
+                student_cards = StudentCard.objects.filter(student_id=student_id)
+                
+                if not student_cards.exists():
+                    messages.error(request, "Student ID not found. Please check the ID and try again.")
+                    return render(request, 'library/reserve_book.html', {'form': form, 'book': book})
+                
+                # Use the most recent student card
+                student = student_cards.latest('uploaded_at')
                 
                 # Check if student already has a pending reservation for this book
-                if Reservation.objects.filter(student=student, book=book, status='pending').exists():
+                if Reservation.objects.filter(
+                    student__student_id=student_id, 
+                    book=book, 
+                    status='pending'
+                ).exists():
                     messages.error(request, "You already have a pending reservation for this book.")
                     return redirect('library_book_detail', book_id=book.id)
                 
@@ -396,8 +441,8 @@ def reserve_book(request, book_id):
                 messages.success(request, f"Book '{book.title}' has been reserved successfully.")
                 return redirect('library_student_detail', student_id=student.id)
                 
-            except StudentCard.DoesNotExist:
-                messages.error(request, "Student ID not found. Please check the ID and try again.")
+            except Exception as e:
+                messages.error(request, f"An error occurred: {str(e)}")
     else:
         form = ReservationForm()
     
