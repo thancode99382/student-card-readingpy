@@ -1,0 +1,93 @@
+{% extends 'students/base.html' %}
+
+{% block title %}Upload Student Card{% endblock %}
+
+{% block content %}
+<div class="row justify-content-center">
+    <div class="col-md-8">
+        <div class="card">
+            <div class="card-header bg-primary text-white">
+                <h4 class="mb-0"><i class="fas fa-upload me-2"></i> Upload Student Card</h4>
+            </div>
+            <div class="card-body">
+                <form method="post" enctype="multipart/form-data" id="uploadForm">
+                    {% csrf_token %}
+                    <div class="mb-4">
+                        <label for="card_image" class="form-label">Student Card Image</label>
+                        <input type="file" name="card_image" id="card_image" class="form-control" accept="image/*" required>
+                        <div class="form-text text-muted">
+                            Upload a clear image of a student ID card. Supported formats: JPG, PNG.
+                        </div>
+                    </div>
+                    
+                    <div id="imagePreview" class="mt-3 mb-4 d-none">
+                        <h5>Image Preview:</h5>
+                        <img src="" alt="Image Preview" class="img-fluid img-thumbnail">
+                    </div>
+                    
+                    <div class="d-grid gap-2">
+                        <button type="submit" class="btn btn-primary" id="submitBtn">
+                            <i class="fas fa-cloud-upload-alt me-2"></i> Upload and Process
+                        </button>
+                        <a href="{% url 'home' %}" class="btn btn-secondary">
+                            <i class="fas fa-arrow-left me-2"></i> Back to Home
+                        </a>
+                    </div>
+                </form>
+            </div>
+        </div>
+        
+        <div class="card mt-4">
+            <div class="card-header bg-info text-white">
+                <h5 class="mb-0"><i class="fas fa-info-circle me-2"></i> Guidelines for Best Results</h5>
+            </div>
+            <div class="card-body">
+                <ul class="list-group list-group-flush">
+                    <li class="list-group-item">
+                        <i class="fas fa-check-circle text-success me-2"></i> Ensure the card is well-lit and clearly visible
+                    </li>
+                    <li class="list-group-item">
+                        <i class="fas fa-check-circle text-success me-2"></i> Avoid glare or shadows on the card
+                    </li>
+                    <li class="list-group-item">
+                        <i class="fas fa-check-circle text-success me-2"></i> Make sure all text on the card is legible
+                    </li>
+                    <li class="list-group-item">
+                        <i class="fas fa-check-circle text-success me-2"></i> Position the card to fill most of the image frame
+                    </li>
+                    <li class="list-group-item">
+                        <i class="fas fa-check-circle text-success me-2"></i> The processing may take a few seconds depending on image size
+                    </li>
+                </ul>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}
+
+{% block extra_js %}
+<script>
+    // Image preview functionality
+    document.getElementById('card_image').addEventListener('change', function(e) {
+        const file = e.target.files[0];
+        if (file) {
+            const reader = new FileReader();
+            const preview = document.getElementById('imagePreview');
+            const previewImg = preview.querySelector('img');
+            
+            reader.onload = function(e) {
+                previewImg.src = e.target.result;
+                preview.classList.remove('d-none');
+            }
+            
+            reader.readAsDataURL(file);
+        }
+    });
+    
+    // Disable submit button after click to prevent double submission
+    document.getElementById('uploadForm').addEventListener('submit', function() {
+        document.getElementById('submitBtn').disabled = true;
+        document.getElementById('submitBtn').innerHTML = '<span class="spinner-border spinner-border-sm me-2" role="status" aria-hidden="true"></span> Processing...';
+    });
+</script>
+{% endblock %}

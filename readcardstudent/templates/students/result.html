@@ -1,0 +1,122 @@
+{% extends 'students/base.html' %}
+
+{% block title %}Processing Results{% endblock %}
+
+{% block content %}
+<div class="row">
+    <div class="col-md-12 mb-4">
+        <div class="card">
+            <div class="card-header bg-success text-white">
+                <h4 class="mb-0"><i class="fas fa-check-circle me-2"></i> Processing Completed Successfully</h4>
+            </div>
+            <div class="card-body">
+                <div class="alert alert-info">
+                    <i class="fas fa-info-circle me-2"></i> The student card has been processed and information has been extracted.
+                </div>
+                
+                <div class="row">
+                    <div class="col-md-6">
+                        <h5 class="border-bottom pb-2">Extracted Information</h5>
+                        <table class="table table-striped">
+                            <tbody>
+                                <tr>
+                                    <th style="width: 30%">University:</th>
+                                    <td>{{ student_card.university|default:"Not detected" }}</td>
+                                </tr>
+                                <tr>
+                                    <th>Card Type:</th>
+                                    <td>{{ student_card.student_card_type|default:"Not detected" }}</td>
+                                </tr>
+                                <tr>
+                                    <th>Name:</th>
+                                    <td>{{ student_card.name|default:"Not detected" }}</td>
+                                </tr>
+                                <tr>
+                                    <th>Student ID:</th>
+                                    <td>{{ student_card.student_id|default:"Not detected" }}</td>
+                                </tr>
+                                <tr>
+                                    <th>Date of Birth:</th>
+                                    <td>{{ student_card.dob|default:"Not detected" }}</td>
+                                </tr>
+                                <tr>
+                                    <th>Class:</th>
+                                    <td>{{ student_card.class_name|default:"Not detected" }}</td>
+                                </tr>
+                                <tr>
+                                    <th>Cohort:</th>
+                                    <td>{{ student_card.cohort|default:"Not detected" }}</td>
+                                </tr>
+                            </tbody>
+                        </table>
+                    </div>
+                    
+                    <div class="col-md-6">
+                        <h5 class="border-bottom pb-2">Original Image</h5>
+                        <div class="card-img-container mb-3">
+                            <img src="{{ student_card.image.url }}" class="img-fluid" alt="Student Card">
+                        </div>
+                    </div>
+                </div>
+            </div>
+            <div class="card-footer">
+                <div class="d-flex justify-content-between">
+                    <a href="{% url 'upload_card' %}" class="btn btn-primary">
+                        <i class="fas fa-upload me-1"></i> Process Another Card
+                    </a>
+                    <a href="{% url 'card_list' %}" class="btn btn-secondary">
+                        <i class="fas fa-list me-1"></i> View All Cards
+                    </a>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- Visualization Section -->
+{% if visualizations %}
+<div class="row">
+    <div class="col-12">
+        <div class="card mb-4">
+            <div class="card-header bg-info text-white">
+                <h4 class="mb-0"><i class="fas fa-chart-line me-2"></i> Processing Visualizations</h4>
+            </div>
+            <div class="card-body">
+                <ul class="nav nav-tabs" id="visualizationTabs" role="tablist">
+                    <li class="nav-item" role="presentation">
+                        <button class="nav-link active" id="combined-tab" data-bs-toggle="tab" data-bs-target="#combined" type="button" role="tab" aria-selected="true">Combined View</button>
+                    </li>
+                    <li class="nav-item" role="presentation">
+                        <button class="nav-link" id="original-tab" data-bs-toggle="tab" data-bs-target="#original" type="button" role="tab" aria-selected="false">Original</button>
+                    </li>
+                    <li class="nav-item" role="presentation">
+                        <button class="nav-link" id="processed-tab" data-bs-toggle="tab" data-bs-target="#processed" type="button" role="tab" aria-selected="false">Processed</button>
+                    </li>
+                    <li class="nav-item" role="presentation">
+                        <button class="nav-link" id="regions-tab" data-bs-toggle="tab" data-bs-target="#regions" type="button" role="tab" aria-selected="false">Text Regions</button>
+                    </li>
+                </ul>
+                <div class="tab-content p-3 border border-top-0 rounded-bottom" id="visualizationTabsContent">
+                    <div class="tab-pane fade show active text-center" id="combined" role="tabpanel">
+                        <img src="{{ visualizations.combined|default:'' }}" class="vis-img" alt="Combined Visualization">
+                        <p class="text-muted mt-2">Three stages of processing: Original, Processed, and Text Regions Detection</p>
+                    </div>
+                    <div class="tab-pane fade text-center" id="original" role="tabpanel">
+                        <img src="{{ visualizations.original|default:'' }}" class="vis-img" alt="Original Image">
+                        <p class="text-muted mt-2">Original uploaded image</p>
+                    </div>
+                    <div class="tab-pane fade text-center" id="processed" role="tabpanel">
+                        <img src="{{ visualizations.processed|default:'' }}" class="vis-img" alt="Processed Image">
+                        <p class="text-muted mt-2">Image after preprocessing (enhancing readability for OCR)</p>
+                    </div>
+                    <div class="tab-pane fade text-center" id="regions" role="tabpanel">
+                        <img src="{{ visualizations.regions|default:'' }}" class="vis-img" alt="Text Regions">
+                        <p class="text-muted mt-2">Detected text regions used for information extraction</p>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+{% endif %}
+{% endblock %}
